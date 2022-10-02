@@ -58,7 +58,7 @@ function cleanBundles(bundlePath, existingBundles) {
 function bundleRepository(repository) {
   const dirname =
     process.env.BACKUP_PATH || path.dirname(fileURLToPath(import.meta.url));
-  const { full_name, clone_url, pushed_at } = repository;
+  const { full_name, clone_url, ssh_url, pushed_at } = repository;
 
   const bundlePath = path.join(dirname, full_name);
   const cloneRepoPath = path.join(dirname, full_name, "cloned");
@@ -82,7 +82,8 @@ function bundleRepository(repository) {
   try {
     console.log(`Cloning ${full_name} into ${cloneRepoPath}`);
     process.chdir(cloneRepoPath);
-    execSync(`git clone --mirror ${clone_url} .`);
+    const url = process.env.USE_SSH_URL === "true" ? ssh_url : clone_url;
+    execSync(`git clone --mirror ${url} .`);
     execSync(`git bundle create ${bundleName} --all`);
     process.chdir(dirname);
 
