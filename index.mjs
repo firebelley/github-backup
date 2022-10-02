@@ -1,9 +1,12 @@
+import * as dotenv from "dotenv"; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 import { Octokit } from "octokit";
 import { paginateRest } from "@octokit/plugin-paginate-rest";
 import fs, { mkdirSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+
+dotenv.config();
 
 const MyOctokit = Octokit.plugin(paginateRest);
 const octokit = new MyOctokit({ auth: process.env.GITHUB_TOKEN });
@@ -53,7 +56,8 @@ function cleanBundles(bundlePath, existingBundles) {
 }
 
 function bundleRepository(repository) {
-  const dirname = path.dirname(fileURLToPath(import.meta.url));
+  const dirname =
+    process.env.BACKUP_PATH || path.dirname(fileURLToPath(import.meta.url));
   const { full_name, clone_url, pushed_at } = repository;
 
   const bundlePath = path.join(dirname, full_name);
