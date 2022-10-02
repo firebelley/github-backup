@@ -103,6 +103,7 @@ function bundleRepository(repository) {
 }
 
 async function processRepositories(repositories) {
+  throw new Error("I want synology to notify me of this failure");
   for (const repository of repositories) {
     bundleRepository(repository);
   }
