@@ -107,6 +107,5 @@ function bundleRepository(repository) {
 async function processRepositories(repositories) {
   for (const repository of repositories) {
     bundleRepository(repository);
-    break;
   }
 }
