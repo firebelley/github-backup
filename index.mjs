@@ -99,11 +99,13 @@ function bundleRepository(repository) {
     cleanBundles(bundlePath, existingBundles);
   } catch (e) {
     console.error(e);
+    process.exit(1);
   }
 }
 
 async function processRepositories(repositories) {
-  throw new Error("I want synology to notify me of this failure");
+  console.error("I want synology to notify me of this failure");
+  process.exit(1);
   for (const repository of repositories) {
     bundleRepository(repository);
   }
