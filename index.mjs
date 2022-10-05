@@ -5,7 +5,9 @@ import fs, { mkdirSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import chalk from "chalk";
 
+const { log } = console;
 dotenv.config();
 
 const MyOctokit = Octokit.plugin(paginateRest);
@@ -41,7 +43,11 @@ function getExistingBundles(bundlePath) {
 }
 
 function cleanBundles(bundlePath, existingBundles) {
-  if (Object.keys(existingBundles).length + 1 <= 5) return;
+  if (
+    Object.keys(existingBundles).length + 1 <=
+    parseInt(process.env.MAX_BACKUPS)
+  )
+    return;
   const bundlesAscending = Object.keys(existingBundles).map((key) => ({
     name: key,
     bundle: existingBundles[key],
@@ -49,10 +55,10 @@ function cleanBundles(bundlePath, existingBundles) {
   bundlesAscending.sort((a, b) => {
     return a.bundle.date - b.bundle.date;
   });
-  console.log("Pruning backups");
+  log(chalk.yellow(`✂️  Pruning backups in ${bundlePath}`));
   const prunePath = path.join(bundlePath, bundlesAscending[0].name);
   fs.unlinkSync(prunePath);
-  console.log(`Pruned ${prunePath}`);
+  log(chalk.green(`✂️  Pruned ${prunePath}`));
 }
 
 function bundleRepository(repository) {
@@ -71,8 +77,10 @@ function bundleRepository(repository) {
 
   const existingBundles = getExistingBundles(bundlePath);
   if (isBackupUpToDate(existingBundles, latestDate)) {
-    console.log(
-      `Repository ${full_name} backup is up-to-date. Skipping bundle step.`
+    log(
+      chalk.green(
+        `✅  Repository ${full_name} backup is up-to-date. Skipping bundle step.`
+      )
     );
     return;
   }
@@ -80,12 +88,14 @@ function bundleRepository(repository) {
   mkdirSync(cloneRepoPath, { recursive: true });
 
   try {
-    console.log(`Cloning ${full_name} into ${cloneRepoPath}`);
-    process.chdir(cloneRepoPath);
+    log(chalk.blue(`⬇️  Cloning ${full_name} ➡️  ${cloneRepoPath}`));
     const url = process.env.USE_SSH_URL === "true" ? ssh_url : clone_url;
-    execSync(`git clone --mirror ${url} .`);
-    execSync(`git bundle create ${bundleName} --all`);
-    process.chdir(dirname);
+    execSync(`git clone --mirror ${url} .`, {
+      cwd: cloneRepoPath,
+      stdio: "pipe",
+    });
+    execSync(`git bundle create ${bundleName} --all`, { cwd: cloneRepoPath });
+    log(chalk.green(`✅ Created ${bundleName}`));
 
     fs.renameSync(
       path.join(cloneRepoPath, bundleName),
@@ -99,8 +109,7 @@ function bundleRepository(repository) {
 
     cleanBundles(bundlePath, existingBundles);
   } catch (e) {
-    console.error(e);
-    throw e;
+    console.error(chalk.red(e));
   }
 }
 
