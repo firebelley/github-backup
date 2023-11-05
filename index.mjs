@@ -13,12 +13,6 @@ dotenv.config();
 const MyOctokit = Octokit.plugin(paginateRest);
 const octokit = new MyOctokit({ auth: process.env.GITHUB_TOKEN });
 
-const result = await octokit.paginate(`GET /user/repos`, {
-  type: "owner",
-  per_page: 50,
-});
-await processRepositories(result);
-
 function isBackupUpToDate(existingBundles, latestDate) {
   return Object.keys(existingBundles).some((existingBundle) =>
     existingBundle.includes(`${latestDate}`)
@@ -113,8 +107,15 @@ function bundleRepository(repository) {
   }
 }
 
-async function processRepositories(repositories) {
+function processRepositories(repositories) {
   for (const repository of repositories) {
     bundleRepository(repository);
   }
 }
+
+const result = await octokit.paginate(`GET /user/repos`, {
+  type: "owner",
+  per_page: 50,
+});
+processRepositories(result);
+process.exit()
